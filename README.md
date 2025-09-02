@@ -91,7 +91,23 @@ PROXY_FILE=./my-proxies.txt node cli.js https://example.com
 PROXY_URLS="http://proxy1:8000" PROXY_FILE=./my-proxies.txt node cli.js https://example.com
 ```
 
-Note: The server (`npm start`) currently reads proxies only from `PROXY_URLS`.
+Server support: The server (`npm start`) also supports loading proxies from `PROXY_FILE` (or default `proxy.txt`) in addition to `PROXY_URLS`. The two sources are merged and de-duplicated.
+
+Examples (server):
+
+```bash
+# Using PROXY_URLS only
+PROXY_URLS="http://proxy1.com:8000,http://proxy2.com:8000" npm start
+
+# Using default proxy.txt
+npm start
+
+# Using a custom file
+PROXY_FILE=./my-proxies.txt npm start
+
+# Combine both
+PROXY_URLS="http://proxy3:8000" PROXY_FILE=./my-proxies.txt npm start
+```
 
 ## How It Works
 

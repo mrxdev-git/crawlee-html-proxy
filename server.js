@@ -1,6 +1,7 @@
 import express from 'express';
 import {Configuration, PlaywrightCrawler, ProxyConfiguration} from 'crawlee';
 import {firefox} from 'playwright';
+import fs from 'fs';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -12,6 +13,32 @@ let sharedCrawler = null;
 const resultsById = new Map();
 // Serialize runs in persistent mode to avoid "already running"
 let runMutex = Promise.resolve();
+
+function loadProxyUrls() {
+  const fromEnv = process.env.PROXY_URLS ? process.env.PROXY_URLS.split(',') : [];
+  const filePath = process.env.PROXY_FILE || 'proxy.txt';
+  let fromFile = [];
+  try {
+    if (fs.existsSync(filePath)) {
+      fromFile = fs.readFileSync(filePath, 'utf-8')
+        .split(/\r?\n/)
+        .map((l) => l.trim())
+        .filter((l) => l && !l.startsWith('#'));
+    }
+  } catch (e) {
+    console.warn(`Warning: Failed to read proxy file "${filePath}": ${e.message}`);
+  }
+  const combined = [...fromEnv, ...fromFile];
+  const seen = new Set();
+  const deduped = [];
+  for (const u of combined) {
+    if (!seen.has(u)) {
+      deduped.push(u);
+      seen.add(u);
+    }
+  }
+  return deduped;
+}
 
 async function createCrawler(proxyConfiguration) {
   // Define a crawler whose requestHandler resolves per-request promises via request.userData
@@ -121,7 +148,7 @@ app.get('/fetch', async (req, res) => {
   try {
     // Create proxy configuration with rotation if proxies are provided
     let proxyConfiguration = undefined;
-    const proxyUrls = process.env.PROXY_URLS ? process.env.PROXY_URLS.split(',') : [];
+    const proxyUrls = loadProxyUrls();
     if (proxyUrls.length > 0) {
       proxyConfiguration = new ProxyConfiguration({ proxyUrls });
     }
@@ -185,7 +212,7 @@ app.post('/admin/reset-crawler', async (req, res) => {
     }
     // Recreate immediately to prepare instance
     let proxyConfiguration = undefined;
-    const proxyUrls = process.env.PROXY_URLS ? process.env.PROXY_URLS.split(',') : [];
+    const proxyUrls = loadProxyUrls();
     if (proxyUrls.length > 0) proxyConfiguration = new ProxyConfiguration({ proxyUrls });
     sharedCrawler = await createCrawler(proxyConfiguration);
     res.json({ ok: true, message: 'Crawler reset' });
