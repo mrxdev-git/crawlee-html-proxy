@@ -1,0 +1,27 @@
+{
+  "name": "html-proxy",
+  "version": "1.0.0",
+  "description": "Node.js API for fetching HTML content with anti-detection capabilities and proxy rotation using Crawlee",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "start:persist": "PERSISTENT_CRAWLER=true node server.js",
+    "dev": "node server.js",
+    "fetch": "node cli.js"
+  },
+  "keywords": [
+    "crawlee",
+    "proxy",
+    "anti-detection",
+    "html",
+    "api"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "crawlee": "^3.14.1",
+    "express": "^4.18.2",
+    "playwright": "^1.55.0"
+  }
+}
