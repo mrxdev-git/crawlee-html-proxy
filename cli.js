@@ -2,6 +2,7 @@
 
 import { PlaywrightCrawler, ProxyConfiguration, Configuration } from 'crawlee';
 import { firefox } from 'playwright';
+import fs from 'fs';
 
 // Get URL from command line arguments
 const url = process.argv[2];
@@ -24,12 +25,36 @@ async function fetchHtml(url) {
     try {
         // Create proxy configuration with rotation if proxies are provided
         let proxyConfiguration = undefined;
-        const proxyUrls = process.env.PROXY_URLS ? process.env.PROXY_URLS.split(',') : [];
+        const proxyUrls = (() => {
+            const fromEnv = process.env.PROXY_URLS ? process.env.PROXY_URLS.split(',') : [];
+            const filePath = process.env.PROXY_FILE || 'proxy.txt';
+            let fromFile = [];
+            try {
+                if (fs.existsSync(filePath)) {
+                    fromFile = fs.readFileSync(filePath, 'utf-8')
+                        .split(/\r?\n/)
+                        .map((l) => l.trim())
+                        .filter((l) => l && !l.startsWith('#'));
+                }
+            } catch (e) {
+                console.warn(`Warning: Failed to read proxy file "${filePath}": ${e.message}`);
+            }
+            const combined = [...fromEnv, ...fromFile];
+            const seen = new Set();
+            const deduped = [];
+            for (const u of combined) {
+                if (!seen.has(u)) {
+                    deduped.push(u);
+                    seen.add(u);
+                }
+            }
+            return deduped;
+        })();
         
         // Only create proxy configuration if we have proxy URLs
         if (proxyUrls.length > 0) {
             proxyConfiguration = new ProxyConfiguration({
-                proxyUrls: proxyUrls,
+                proxyUrls,
             });
         }
         

@@ -57,7 +57,10 @@ node cli.js https://mircli.ru
 
 ## Proxy Configuration
 
-To use proxy rotation, set the `PROXY_URLS` environment variable with a comma-separated list of proxy URLs:
+To use proxy rotation, you have two options:
+
+1. Set the `PROXY_URLS` environment variable with a comma-separated list of proxy URLs
+2. Provide a text file with one proxy URL per line (CLI only)
 
 ```bash
 PROXY_URLS="http://proxy1.com:8000,http://proxy2.com:8000" npm start
@@ -67,6 +70,28 @@ Or for CLI usage:
 ```bash
 PROXY_URLS="http://proxy1.com:8000,http://proxy2.com:8000" node cli.js <url>
 ```
+
+### Using a Proxy File (CLI only)
+
+For the CLI (`node cli.js <url>`), you can load proxies from a text file, one per line. Empty lines and lines starting with `#` are ignored. The list from the file is merged with `PROXY_URLS` (with de-duplication):
+
+- Use `PROXY_FILE` to specify a custom path
+- If `PROXY_FILE` is not set, the CLI looks for `proxy.txt` in the project root
+
+Examples:
+
+```bash
+# Use default proxy.txt (one URL per line)
+node cli.js https://example.com
+
+# Use a custom file
+PROXY_FILE=./my-proxies.txt node cli.js https://example.com
+
+# Combine with PROXY_URLS (all unique proxies will be used)
+PROXY_URLS="http://proxy1:8000" PROXY_FILE=./my-proxies.txt node cli.js https://example.com
+```
+
+Note: The server (`npm start`) currently reads proxies only from `PROXY_URLS`.
 
 ## How It Works
 
