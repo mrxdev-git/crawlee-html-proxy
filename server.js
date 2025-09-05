@@ -28,7 +28,20 @@ function loadProxyUrls() {
   } catch (e) {
     console.warn(`Warning: Failed to read proxy file "${filePath}": ${e.message}`);
   }
-  const combined = [...fromEnv, ...fromFile];
+  const combined = [...fromEnv, ...fromFile]
+    .map((raw) => {
+      let v = String(raw || '').trim();
+      if (!v) return '';
+      if (!/^\w+:\/\//i.test(v)) v = `http://${v}`;
+      try {
+        // eslint-disable-next-line no-new
+        new URL(v);
+        return v;
+      } catch (_) {
+        return '';
+      }
+    })
+    .filter(Boolean);
   const seen = new Set();
   const deduped = [];
   for (const u of combined) {

@@ -25,6 +25,24 @@ async function fetchHtml(url) {
     try {
         // Create proxy configuration with rotation if proxies are provided
         let proxyConfiguration = undefined;
+        const normalizeProxies = (list) => {
+            const out = [];
+            for (let raw of list) {
+                let v = raw.trim();
+                if (!v) continue;
+                // If missing scheme, assume http://
+                if (!/^\w+:\/\//i.test(v)) v = `http://${v}`;
+                try {
+                    // Validate URL
+                    // eslint-disable-next-line no-new
+                    new URL(v);
+                    out.push(v);
+                } catch (_) {
+                    // skip invalid
+                }
+            }
+            return out;
+        };
         const proxyUrls = (() => {
             const fromEnv = process.env.PROXY_URLS ? process.env.PROXY_URLS.split(',') : [];
             const filePath = process.env.PROXY_FILE || 'proxy.txt';
@@ -39,7 +57,7 @@ async function fetchHtml(url) {
             } catch (e) {
                 console.warn(`Warning: Failed to read proxy file "${filePath}": ${e.message}`);
             }
-            const combined = [...fromEnv, ...fromFile];
+            const combined = normalizeProxies([...fromEnv, ...fromFile]);
             const seen = new Set();
             const deduped = [];
             for (const u of combined) {
@@ -84,7 +102,7 @@ async function fetchHtml(url) {
             launchContext: {
                 launcher: firefox,
                 launchOptions: {
-                    headless: true,
+                    headless: false,
                 },
             },
             
