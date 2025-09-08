@@ -83,3 +83,4 @@ storage/
 
 # macOS
 .DS_Store
+*proxy.txt
