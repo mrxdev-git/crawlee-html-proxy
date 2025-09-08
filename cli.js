@@ -6,10 +6,11 @@ import fs from 'fs';
 
 // Get URL from command line arguments
 const url = process.argv[2];
+const waitForSelector = process.argv[3] || null;
 
 if (!url) {
     console.error('Error: URL parameter is required');
-    console.log('Usage: node cli.js <url>');
+    console.log('Usage: node cli.js <url> [<selector_to_wait_for>]');
     process.exit(1);
 }
 
@@ -102,7 +103,7 @@ async function fetchHtml(url) {
             launchContext: {
                 launcher: firefox,
                 launchOptions: {
-                    headless: false,
+                    headless: true,
                 },
             },
             
@@ -120,7 +121,13 @@ async function fetchHtml(url) {
             async requestHandler({ page, request, response }) {
                 console.log(`Processing ${request.url}...`);
                 try {
+
+                    if (waitForSelector) {
+                        await page.waitForSelector(waitForSelector);
+                    }
+
                     const html = await page.content();
+
                     result = {
                         url: request.url,
                         html,
