@@ -2,6 +2,7 @@ import express from 'express';
 import {Configuration, PlaywrightCrawler, ProxyConfiguration} from 'crawlee';
 import {firefox} from 'playwright';
 import fs from 'fs';
+import { fetchMircliHtml } from './scrapers/mircli.js';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -164,6 +165,19 @@ app.get('/fetch', async (req, res) => {
     const proxyUrls = loadProxyUrls();
     if (proxyUrls.length > 0) {
       proxyConfiguration = new ProxyConfiguration({ proxyUrls });
+    }
+
+    // Specialized handling for mircli.ru
+    const hostname = new URL(url).hostname.toLowerCase();
+    if (hostname.endsWith('mircli.ru')) {
+      const html = await fetchMircliHtml(String(url), {
+        proxyConfiguration,
+        waitForSelector: typeof req.query.waitForSelector === 'string' ? req.query.waitForSelector : undefined,
+        timeoutMs: Number(req.query.timeoutMs) || 45000,
+        headless: String(process.env.MIRCLI_HEADLESS || '').toLowerCase() !== 'false',
+      });
+      res.set('Content-Type', 'text/html');
+      return res.send(html);
     }
 
     const forceReset = String(req.query.forceReset || '').toLowerCase() === 'true' || req.query.forceReset === '1';

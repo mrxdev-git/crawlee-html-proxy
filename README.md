@@ -55,6 +55,59 @@ Example:
 node cli.js https://mircli.ru
 ```
 
+## Specialized Scraper: mircli.ru
+
+This project includes a specialized scraper for the site https://mircli.ru/ that better mimics a real browser and handles the site's first-visit JavaScript challenges/popups.
+
+- The specialized scraper lives in `scrapers/mircli.js` and uses Crawlee's `PlaywrightCrawler` with Chrome-like fingerprints and Russian locale headers.
+- The server and CLI automatically route requests to this specialized scraper when the request URL's hostname ends with `mircli.ru`.
+
+### Server Usage (auto-routed)
+
+```bash
+# Basic
+curl "http://localhost:3000/fetch?url=https://mircli.ru/"
+
+# Optional: wait for a specific selector before returning HTML
+curl "http://localhost:3000/fetch?url=https://mircli.ru/&waitForSelector=main"
+
+# Optional: adjust timeout (ms)
+curl "http://localhost:3000/fetch?url=https://mircli.ru/&timeoutMs=60000"
+```
+
+Environment variables affecting the specialized scraper:
+
+- `MIRCLI_HEADLESS` — Set to `false` to run headful (default is headless). Example: `MIRCLI_HEADLESS=false npm start`
+- `MIRCLI_TIMEOUT_MS` — Default overall timeout for CLI (server uses `timeoutMs` query param)
+
+The server also continues to support `PROXY_URLS` and `PROXY_FILE` for proxy rotation. These are applied to the specialized scraper as well.
+
+### CLI Usage (auto-routed)
+
+```bash
+# Basic
+node cli.js https://mircli.ru/
+
+# Optional: wait for a specific selector
+node cli.js https://mircli.ru/ 'main'
+
+# With proxies
+PROXY_URLS="http://proxy1:8000,http://proxy2:8000" node cli.js https://mircli.ru/
+
+# Headful for debugging
+MIRCLI_HEADLESS=false node cli.js https://mircli.ru/
+
+# Increase timeout
+MIRCLI_TIMEOUT_MS=60000 node cli.js https://mircli.ru/
+```
+
+### Implementation Notes
+
+- Uses Chrome desktop fingerprints and Russian locales to match site expectations.
+- Adds `Accept-Language: ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7` header and waits for `domcontentloaded` and `networkidle` where helpful.
+- Contains a best-effort challenge detection loop for common JS challenges (Cloudflare, Sucuri, PerimeterX, Distil) and waits for them to resolve.
+- Attempts to close subscription/pop-up modals before capturing the final HTML.
+
 ## Proxy Configuration
 
 To use proxy rotation, you have two options:

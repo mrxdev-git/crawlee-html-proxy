@@ -3,6 +3,7 @@
 import { PlaywrightCrawler, ProxyConfiguration, Configuration } from 'crawlee';
 import { firefox } from 'playwright';
 import fs from 'fs';
+import { fetchMircliHtml } from './scrapers/mircli.js';
 
 // Get URL from command line arguments
 const url = process.argv[2];
@@ -75,6 +76,19 @@ async function fetchHtml(url) {
             proxyConfiguration = new ProxyConfiguration({
                 proxyUrls,
             });
+        }
+        
+        // Specialized handling for mircli.ru
+        const hostname = new URL(url).hostname.toLowerCase();
+        if (hostname.endsWith('mircli.ru')) {
+            const html = await fetchMircliHtml(url, {
+                proxyConfiguration,
+                waitForSelector: waitForSelector || undefined,
+                timeoutMs: Number(process.env.MIRCLI_TIMEOUT_MS) || 45000,
+                headless: String(process.env.MIRCLI_HEADLESS || '').toLowerCase() !== 'false',
+            });
+            console.log(html);
+            return;
         }
         
         // Store the result
